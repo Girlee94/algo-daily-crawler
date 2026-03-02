@@ -12,7 +12,7 @@ export type Problem = {
   title_en: string;
   tier: number;
   accepted_user_count: number;
-  languages: string[];
+  languages: string[] | null;
   url: string;
 };
 
@@ -24,6 +24,3 @@ export type DailyRecommendation = {
   display_order: number;
   problems: Problem;
 };
-
-// Re-export constants for backward compatibility
-export { LANGUAGE_LABELS, TIER_INFO, getTierInfo } from "./constants";

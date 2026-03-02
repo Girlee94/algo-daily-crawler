@@ -9,11 +9,13 @@ type Props = {
 };
 
 function isValidDateFormat(date: string): boolean {
-  return /^\d{4}-\d{2}-\d{2}$/.test(date) && !isNaN(Date.parse(date));
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return false;
+  const parsed = new Date(date + "T00:00:00");
+  return !isNaN(parsed.getTime()) && parsed.toISOString().startsWith(date);
 }
 
 async function getRecommendations(
-  date: string
+  date: string,
 ): Promise<DailyRecommendation[]> {
   const { data, error } = await supabase
     .from("daily_recommendations")
@@ -38,9 +40,7 @@ async function getAvailableDates(): Promise<string[]> {
 
   if (error) return [];
 
-  const uniqueDates = [
-    ...new Set((data || []).map((d) => d.recommended_date)),
-  ];
+  const uniqueDates = [...new Set((data || []).map((d) => d.recommended_date))];
   return uniqueDates;
 }
 
@@ -103,7 +103,7 @@ export default async function HistoryPage({ searchParams }: Props) {
                     year: "numeric",
                     month: "long",
                     day: "numeric",
-                  }
+                  },
                 )}
               </h2>
               <RecommendationList recommendations={recommendations} />

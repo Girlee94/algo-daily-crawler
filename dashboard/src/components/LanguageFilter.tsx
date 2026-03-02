@@ -16,11 +16,16 @@ export default function LanguageFilter({
   if (availableLanguages.length === 0) return null;
 
   return (
-    <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Language filter">
+    <div
+      className="flex flex-wrap items-center gap-2"
+      role="group"
+      aria-label="Language filter"
+    >
       <span className="text-sm text-gray-500 dark:text-gray-400 mr-1">
         Language:
       </span>
       <button
+        type="button"
         onClick={() => onChange(null)}
         aria-pressed={selected === null}
         className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
@@ -33,6 +38,7 @@ export default function LanguageFilter({
       </button>
       {availableLanguages.map((lang) => (
         <button
+          type="button"
           key={lang}
           onClick={() => onChange(lang)}
           aria-pressed={selected === lang}
