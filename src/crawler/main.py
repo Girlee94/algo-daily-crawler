@@ -74,6 +74,7 @@ async def _crawl(
                 "accepted_user_count": problem.accepted_user_count,
                 "average_tries": problem.average_tries,
                 "is_solvable": problem.is_solvable,
+                "languages": problem.languages,
                 "url": problem.url,
                 "metadata": problem.metadata,
                 "updated_at": datetime.now().isoformat(),

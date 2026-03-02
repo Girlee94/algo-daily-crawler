@@ -12,6 +12,7 @@ class ProblemData(BaseModel):
     accepted_user_count: int = 0
     average_tries: float = 0.0
     is_solvable: bool = True
+    languages: list[str] = Field(default_factory=list)
     tags: list[str] = Field(default_factory=list)
     url: str = ""
     metadata: dict[str, Any] = Field(default_factory=dict)

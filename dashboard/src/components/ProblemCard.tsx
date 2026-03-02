@@ -1,4 +1,5 @@
 import DifficultyBadge from "./DifficultyBadge";
+import { LANGUAGE_LABELS } from "@/lib/supabase";
 
 type ProblemCardProps = {
   order: number;
@@ -7,6 +8,7 @@ type ProblemCardProps = {
   url: string;
   externalId: number;
   acceptedCount: number;
+  languages: string[];
   reason: string;
 };
 
@@ -17,6 +19,7 @@ export default function ProblemCard({
   url,
   externalId,
   acceptedCount,
+  languages,
   reason,
 }: ProblemCardProps) {
   return (
@@ -26,9 +29,17 @@ export default function ProblemCard({
       </div>
 
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-1">
+        <div className="flex items-center gap-2 mb-1 flex-wrap">
           <DifficultyBadge tier={tier} />
           <span className="text-xs text-gray-400">#{externalId}</span>
+          {languages.map((lang) => (
+            <span
+              key={lang}
+              className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-600"
+            >
+              {LANGUAGE_LABELS[lang] || lang.toUpperCase()}
+            </span>
+          ))}
         </div>
 
         <a

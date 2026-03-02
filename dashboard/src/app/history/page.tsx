@@ -1,5 +1,5 @@
 import { supabase, DailyRecommendation } from "@/lib/supabase";
-import ProblemCard from "@/components/ProblemCard";
+import RecommendationList from "@/components/RecommendationList";
 import Link from "next/link";
 
 export const revalidate = 3600;
@@ -96,21 +96,7 @@ export default async function HistoryPage({ searchParams }: Props) {
                   }
                 )}
               </h2>
-
-              <div className="space-y-4">
-                {recommendations.map((rec) => (
-                  <ProblemCard
-                    key={rec.id}
-                    order={rec.display_order + 1}
-                    title={rec.problems.title_ko}
-                    tier={rec.problems.tier}
-                    url={rec.problems.url}
-                    externalId={rec.problems.external_id}
-                    acceptedCount={rec.problems.accepted_user_count}
-                    reason={rec.reason}
-                  />
-                ))}
-              </div>
+              <RecommendationList recommendations={recommendations} />
             </div>
           )}
         </>

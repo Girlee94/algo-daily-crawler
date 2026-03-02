@@ -91,14 +91,16 @@ class SolvedAcCrawler(BaseCrawler):
         return all_tags
 
     def _parse_problem(self, raw: dict) -> ProblemData:
+        titles = raw.get("titles", [])
         return ProblemData(
             external_id=raw["problemId"],
             title_ko=raw.get("titleKo", ""),
-            title_en=self._extract_title(raw.get("titles", []), "en"),
+            title_en=self._extract_title(titles, "en"),
             tier=raw.get("level", 0),
             accepted_user_count=raw.get("acceptedUserCount", 0),
             average_tries=raw.get("averageTries", 0.0),
             is_solvable=raw.get("isSolvable", True),
+            languages=[t["language"] for t in titles if t.get("language")],
             tags=[t["key"] for t in raw.get("tags", [])],
             url=f"https://www.acmicpc.net/problem/{raw['problemId']}",
             metadata={

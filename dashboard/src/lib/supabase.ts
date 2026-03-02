@@ -12,7 +12,21 @@ export type Problem = {
   title_en: string;
   tier: number;
   accepted_user_count: number;
+  languages: string[];
   url: string;
+};
+
+export const LANGUAGE_LABELS: Record<string, string> = {
+  ko: "Korean",
+  en: "English",
+  ja: "Japanese",
+  zh: "Chinese",
+  ru: "Russian",
+  bg: "Bulgarian",
+  es: "Spanish",
+  fr: "French",
+  de: "German",
+  vi: "Vietnamese",
 };
 
 export type DailyRecommendation = {
@@ -43,5 +57,12 @@ export function getTierInfo(tier: number) {
       return { key, ...info, level, label: `${info.name} ${level}` };
     }
   }
-  return { key: "unrated", name: "Unrated", color: "#666", range: [0, 0] as [number, number], level: 0, label: "Unrated" };
+  return {
+    key: "unrated",
+    name: "Unrated",
+    color: "#666",
+    range: [0, 0] as [number, number],
+    level: 0,
+    label: "Unrated",
+  };
 }
