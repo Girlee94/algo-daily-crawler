@@ -1,0 +1,15 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+.idea/
+*.iml
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+
+# Dashboard
+dashboard/node_modules/
+dashboard/.next/
+dashboard/.env.local

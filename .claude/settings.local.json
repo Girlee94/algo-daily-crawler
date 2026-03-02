@@ -1,0 +1,39 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(/Users/ihyeongjun/Documents/kotlin/study/ready-japan/crawling-python/crawling-python/.venv/bin/python --version)",
+      "WebFetch(domain:solved.ac)",
+      "WebFetch(domain:solvedac.github.io)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:help.solved.ac)",
+      "mcp__plugin_context7_context7__resolve-library-id",
+      "mcp__plugin_context7_context7__query-docs",
+      "mcp__sequential-thinking__sequentialthinking",
+      "Bash(docker ps --format \"table {{.Names}}\\\\t{{.Ports}}\\\\t{{.Status}}\")",
+      "Bash(.venv/bin/pip install -e \".[dev]\")",
+      "Bash(docker exec supabase-db psql -U postgres -d postgres -c \"\\\\dt public.*\" -c \"\\\\d crawl_sources\")",
+      "Bash(docker exec supabase-db psql -U postgres -d postgres -c \"\\\\d tags\" -c \"\\\\d crawl_histories\")",
+      "Bash(docker exec supabase-db psql -U postgres -d postgres -c \"SELECT id, name, url, source_type FROM crawl_sources;\")",
+      "Bash(docker exec supabase-db psql -U postgres -d postgres -c \"\\\\d crawl_sources\")",
+      "Bash(docker exec supabase-db psql -U postgres -d postgres -c \"INSERT INTO crawl_sources \\(name, url, source_type, config\\) SELECT ''solved_ac'', ''https://solved.ac/api/v3'', ''API'', ''{\"\"rate_limit_delay\"\": 0.5}'' WHERE NOT EXISTS \\(SELECT 1 FROM crawl_sources WHERE name = ''solved_ac''\\);\")",
+      "Bash(docker exec supabase-db psql -U postgres -d postgres -c \"SELECT id, name, url, source_type FROM crawl_sources WHERE name = ''solved_ac'';\")",
+      "Bash(.venv/bin/python -m crawler.main --help)",
+      "Bash(.venv/bin/pip install -e .)",
+      "Bash(.venv/bin/python -m crawler.main sync-tags)",
+      "Bash(.venv/bin/python -m crawler.main crawl --source solved_ac --tier-min 1 --tier-max 20 --max-pages 2)",
+      "Bash(.venv/bin/python -m crawler.main recommend --date 2026-03-02 --count 5)",
+      "Bash(node --version)",
+      "Bash(npx --version)",
+      "Bash(npx create-next-app@latest dashboard --typescript --tailwind --eslint --app --src-dir --no-import-alias --use-npm)",
+      "Bash(kill %1)",
+      "Bash(yes \"\")",
+      "Bash(npm install @supabase/supabase-js)",
+      "Bash(npm run build)",
+      "Bash(docker exec supabase-db psql -U postgres -d postgres -c \"SELECT count\\(*\\) as tags FROM tags;\" -c \"SELECT count\\(*\\) as problems FROM problems;\" -c \"SELECT count\\(*\\) as recommendations FROM daily_recommendations;\" -c \"SELECT p.tier, p.title_ko, p.url FROM daily_recommendations dr JOIN problems p ON dr.problem_id = p.id WHERE dr.recommended_date = ''2026-03-02'' ORDER BY dr.display_order;\")",
+      "Bash(gh auth status)",
+      "Bash(git init)",
+      "Bash(git add -A)"
+    ]
+  }
+}
