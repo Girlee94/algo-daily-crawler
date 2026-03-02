@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS problems (
     accepted_user_count INTEGER DEFAULT 0,
     average_tries NUMERIC(6,2),
     is_solvable BOOLEAN DEFAULT true,
+    languages TEXT[] DEFAULT '{}',
     url TEXT,
     metadata JSONB DEFAULT '{}',
     created_at TIMESTAMPTZ DEFAULT now(),
