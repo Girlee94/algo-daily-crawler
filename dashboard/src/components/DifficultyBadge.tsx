@@ -1,4 +1,4 @@
-import { getTierInfo } from "@/lib/supabase";
+import { getTierInfo } from "@/lib/constants";
 
 export default function DifficultyBadge({ tier }: { tier: number }) {
   const info = getTierInfo(tier);

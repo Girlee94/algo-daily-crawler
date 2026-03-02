@@ -1,5 +1,5 @@
 import DifficultyBadge from "./DifficultyBadge";
-import { LANGUAGE_LABELS } from "@/lib/supabase";
+import { LANGUAGE_LABELS } from "@/lib/constants";
 
 type ProblemCardProps = {
   order: number;
@@ -35,6 +35,7 @@ export default function ProblemCard({
           {languages.map((lang) => (
             <span
               key={lang}
+              aria-label={`Available in ${LANGUAGE_LABELS[lang] || lang}`}
               className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-600"
             >
               {LANGUAGE_LABELS[lang] || lang.toUpperCase()}

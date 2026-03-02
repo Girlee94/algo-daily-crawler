@@ -56,26 +56,26 @@ export default function RecommendationList({
         </div>
       ) : (
         <div className="space-y-4">
-          {filtered.map((rec, idx) => (
+          {filtered.map((rec) => (
             <ProblemCard
               key={rec.id}
-              order={idx + 1}
+              order={rec.display_order + 1}
               title={rec.problems.title_ko}
               tier={rec.problems.tier}
               url={rec.problems.url}
               externalId={rec.problems.external_id}
               acceptedCount={rec.problems.accepted_user_count}
-              languages={rec.problems.languages || []}
+              languages={[...new Set(rec.problems.languages || [])]}
               reason={rec.reason}
             />
           ))}
         </div>
       )}
 
-      {filtered.length > 0 && recommendations.length > 0 && (
+      {recommendations.length > 0 && (
         <div className="mt-6 text-center text-xs text-gray-400">
           Strategy: {recommendations[0]?.strategy}
-          {selectedLang && ` | Filtered: ${filtered.length}/${recommendations.length}`}
+          {selectedLang && filtered.length > 0 && ` | Filtered: ${filtered.length}/${recommendations.length}`}
         </div>
       )}
     </div>

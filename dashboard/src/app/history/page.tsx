@@ -8,6 +8,10 @@ type Props = {
   searchParams: Promise<{ date?: string }>;
 };
 
+function isValidDateFormat(date: string): boolean {
+  return /^\d{4}-\d{2}-\d{2}$/.test(date) && !isNaN(Date.parse(date));
+}
+
 async function getRecommendations(
   date: string
 ): Promise<DailyRecommendation[]> {
@@ -43,7 +47,13 @@ async function getAvailableDates(): Promise<string[]> {
 export default async function HistoryPage({ searchParams }: Props) {
   const params = await searchParams;
   const dates = await getAvailableDates();
-  const selectedDate = params.date || dates[0] || "";
+
+  const requestedDate = params.date;
+  const selectedDate =
+    requestedDate && isValidDateFormat(requestedDate)
+      ? requestedDate
+      : dates[0] || "";
+
   const recommendations = selectedDate
     ? await getRecommendations(selectedDate)
     : [];
