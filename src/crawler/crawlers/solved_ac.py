@@ -79,7 +79,10 @@ class SolvedAcCrawler(BaseCrawler):
             return None
         resp.raise_for_status()
         allowed = set(settings.allowed_languages)
-        return self._parse_problem(resp.json(), allowed_languages=allowed)
+        problem = self._parse_problem(resp.json(), allowed_languages=allowed)
+        if not problem.languages:
+            return None
+        return problem
 
     async def fetch_tags(self) -> list[dict]:
         all_tags: list[dict] = []

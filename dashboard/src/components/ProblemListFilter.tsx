@@ -22,8 +22,11 @@ export default function ProblemListFilter({
 
   const currentTier = searchParams.get("tier") || "all";
   const currentLang = searchParams.get("lang") || "all";
-  const currentSize = Number(searchParams.get("size")) || 20;
-  const currentPage = Number(searchParams.get("page")) || 1;
+  const parsedSize = Number(searchParams.get("size"));
+  const currentSize = PAGE_SIZE_OPTIONS.includes(parsedSize) ? parsedSize : 20;
+  const parsedPage = Number(searchParams.get("page"));
+  const currentPage =
+    Number.isFinite(parsedPage) && parsedPage > 0 ? parsedPage : 1;
 
   const totalPages = Math.max(1, Math.ceil(totalCount / currentSize));
 

@@ -99,10 +99,18 @@ async function ProblemsContent({ searchParams }: Props) {
     ? Number(params.size)
     : 20;
 
-  const [{ problems, totalCount }, availableLanguages] = await Promise.all([
-    getProblems({ page, tier, lang, size }),
-    getAvailableLanguages(),
-  ]);
+  const [{ problems: initialProblems, totalCount }, availableLanguages] =
+    await Promise.all([
+      getProblems({ page, tier, lang, size }),
+      getAvailableLanguages(),
+    ]);
+
+  const totalPages = Math.max(1, Math.ceil(totalCount / size));
+  const safePage = Math.min(page, totalPages);
+  const problems =
+    safePage === page
+      ? initialProblems
+      : (await getProblems({ page: safePage, tier, lang, size })).problems;
 
   return (
     <>
@@ -120,7 +128,7 @@ async function ProblemsContent({ searchParams }: Props) {
           {problems.map((problem, idx) => (
             <ProblemCard
               key={problem.id}
-              order={(page - 1) * size + idx + 1}
+              order={(safePage - 1) * size + idx + 1}
               title={problem.title_ko || problem.title_en}
               tier={problem.tier}
               url={problem.url}
