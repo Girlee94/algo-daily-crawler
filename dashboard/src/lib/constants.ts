@@ -23,6 +23,18 @@ export const TIER_INFO: Record<
   ruby: { name: "Ruby", color: "#ff0062", range: [26, 30] },
 };
 
+export const TIER_FILTER_OPTIONS = [
+  { value: "all", label: "All Tiers" },
+  { value: "bronze", label: "Bronze (1-5)" },
+  { value: "silver", label: "Silver (6-10)" },
+  { value: "gold", label: "Gold (11-15)" },
+  { value: "platinum", label: "Platinum (16-20)" },
+  { value: "diamond", label: "Diamond (21-25)" },
+  { value: "ruby", label: "Ruby (26-30)" },
+];
+
+export const PAGE_SIZE_OPTIONS = [10, 20, 50];
+
 export function getTierInfo(tier: number) {
   for (const [key, info] of Object.entries(TIER_INFO)) {
     if (tier >= info.range[0] && tier <= info.range[1]) {

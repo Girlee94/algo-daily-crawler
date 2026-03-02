@@ -1,0 +1,177 @@
+"use client";
+
+import { useRouter, useSearchParams } from "next/navigation";
+import { useCallback } from "react";
+import {
+  TIER_FILTER_OPTIONS,
+  PAGE_SIZE_OPTIONS,
+  LANGUAGE_LABELS,
+} from "@/lib/constants";
+
+type ProblemListFilterProps = {
+  totalCount: number;
+  availableLanguages: string[];
+};
+
+export default function ProblemListFilter({
+  totalCount,
+  availableLanguages,
+}: ProblemListFilterProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const currentTier = searchParams.get("tier") || "all";
+  const currentLang = searchParams.get("lang") || "all";
+  const currentSize = Number(searchParams.get("size")) || 20;
+  const currentPage = Number(searchParams.get("page")) || 1;
+
+  const totalPages = Math.max(1, Math.ceil(totalCount / currentSize));
+
+  const updateParams = useCallback(
+    (updates: Record<string, string>) => {
+      const params = new URLSearchParams(searchParams.toString());
+      for (const [key, value] of Object.entries(updates)) {
+        if (value === "all" || value === "") {
+          params.delete(key);
+        } else {
+          params.set(key, value);
+        }
+      }
+      if (updates.tier || updates.lang || updates.size) {
+        params.delete("page");
+      }
+      router.push(`/problems?${params.toString()}`);
+    },
+    [router, searchParams],
+  );
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="flex items-center gap-2">
+          <label
+            htmlFor="tier-filter"
+            className="text-sm text-gray-500 dark:text-gray-400"
+          >
+            Tier:
+          </label>
+          <select
+            id="tier-filter"
+            value={currentTier}
+            onChange={(e) => updateParams({ tier: e.target.value })}
+            className="px-3 py-1.5 rounded-lg text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300"
+          >
+            {TIER_FILTER_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <label
+            htmlFor="lang-filter"
+            className="text-sm text-gray-500 dark:text-gray-400"
+          >
+            Language:
+          </label>
+          <select
+            id="lang-filter"
+            value={currentLang}
+            onChange={(e) => updateParams({ lang: e.target.value })}
+            className="px-3 py-1.5 rounded-lg text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300"
+          >
+            <option value="all">All Languages</option>
+            {availableLanguages.map((lang) => (
+              <option key={lang} value={lang}>
+                {LANGUAGE_LABELS[lang] || lang.toUpperCase()}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <label
+            htmlFor="size-filter"
+            className="text-sm text-gray-500 dark:text-gray-400"
+          >
+            Show:
+          </label>
+          <select
+            id="size-filter"
+            value={currentSize}
+            onChange={(e) => updateParams({ size: e.target.value })}
+            className="px-3 py-1.5 rounded-lg text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300"
+          >
+            {PAGE_SIZE_OPTIONS.map((size) => (
+              <option key={size} value={size}>
+                {size} per page
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <span className="text-sm text-gray-400 ml-auto">
+          {totalCount} problems
+        </span>
+      </div>
+
+      {totalPages > 1 && (
+        <nav
+          aria-label="Pagination"
+          className="flex items-center justify-center gap-2"
+        >
+          <button
+            type="button"
+            aria-label="Go to previous page"
+            disabled={currentPage <= 1}
+            onClick={() => updateParams({ page: String(currentPage - 1) })}
+            className="px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            Prev
+          </button>
+
+          {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
+            let page: number;
+            if (totalPages <= 7) {
+              page = i + 1;
+            } else if (currentPage <= 4) {
+              page = i + 1;
+            } else if (currentPage >= totalPages - 3) {
+              page = totalPages - 6 + i;
+            } else {
+              page = currentPage - 3 + i;
+            }
+            return (
+              <button
+                type="button"
+                key={page}
+                aria-label={`Go to page ${page}`}
+                aria-current={page === currentPage ? "page" : undefined}
+                onClick={() => updateParams({ page: String(page) })}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  page === currentPage
+                    ? "bg-blue-500 text-white"
+                    : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+                }`}
+              >
+                {page}
+              </button>
+            );
+          })}
+
+          <button
+            type="button"
+            aria-label="Go to next page"
+            disabled={currentPage >= totalPages}
+            onClick={() => updateParams({ page: String(currentPage + 1) })}
+            className="px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            Next
+          </button>
+        </nav>
+      )}
+    </div>
+  );
+}

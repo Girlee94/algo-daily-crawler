@@ -43,6 +43,8 @@ class SolvedAcCrawler(BaseCrawler):
         all_problems: list[ProblemData] = []
         total = 0
 
+        allowed = set(settings.allowed_languages)
+
         for page in range(1, max_pages + 1):
             resp = await self._client.get(
                 "/search/problem",
@@ -53,7 +55,9 @@ class SolvedAcCrawler(BaseCrawler):
             total = data["count"]
 
             for item in data["items"]:
-                all_problems.append(self._parse_problem(item))
+                problem = self._parse_problem(item, allowed_languages=allowed)
+                if problem.languages:
+                    all_problems.append(problem)
 
             if page * settings.crawl_page_size >= total:
                 break
@@ -74,24 +78,31 @@ class SolvedAcCrawler(BaseCrawler):
         if resp.status_code == 404:
             return None
         resp.raise_for_status()
-        return self._parse_problem(resp.json())
+        allowed = set(settings.allowed_languages)
+        return self._parse_problem(resp.json(), allowed_languages=allowed)
 
     async def fetch_tags(self) -> list[dict]:
         all_tags: list[dict] = []
         page = 1
-        while True:
+        max_tag_pages = 100
+        while page <= max_tag_pages:
             resp = await self._client.get("/tag/list", params={"page": page})
             resp.raise_for_status()
             data = resp.json()
             all_tags.extend(data["items"])
-            if len(all_tags) >= data["count"]:
+            if len(all_tags) >= data["count"] or not data["items"]:
                 break
             page += 1
             await asyncio.sleep(settings.api_request_delay)
         return all_tags
 
-    def _parse_problem(self, raw: dict) -> ProblemData:
+    def _parse_problem(
+        self, raw: dict, allowed_languages: set[str] | None = None
+    ) -> ProblemData:
         titles = raw.get("titles", [])
+        languages = [t["language"] for t in titles if t.get("language")]
+        if allowed_languages is not None:
+            languages = [lang for lang in languages if lang in allowed_languages]
         return ProblemData(
             external_id=raw["problemId"],
             title_ko=raw.get("titleKo", ""),
@@ -100,7 +111,7 @@ class SolvedAcCrawler(BaseCrawler):
             accepted_user_count=raw.get("acceptedUserCount", 0),
             average_tries=raw.get("averageTries", 0.0),
             is_solvable=raw.get("isSolvable", True),
-            languages=[t["language"] for t in titles if t.get("language")],
+            languages=languages,
             tags=[t["key"] for t in raw.get("tags", [])],
             url=f"https://www.acmicpc.net/problem/{raw['problemId']}",
             metadata={

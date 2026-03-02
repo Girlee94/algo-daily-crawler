@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     problems_per_day: int = 5
     crawl_page_size: int = 50
 
+    allowed_languages: list[str] = ["ko", "en", "ja"]
     api_request_delay: float = 0.5
     daily_crawl_cron: str = "0 6 * * *"
 
