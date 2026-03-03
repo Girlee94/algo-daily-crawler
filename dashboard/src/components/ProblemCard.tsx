@@ -9,7 +9,7 @@ type ProblemCardProps = {
   externalId: number;
   acceptedCount: number;
   languages: string[];
-  reason: string;
+  reason?: string;
 };
 
 export default function ProblemCard({
