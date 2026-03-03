@@ -21,9 +21,11 @@ export default function ProblemListFilter({
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  const validDateValues = new Set(DATE_FILTER_OPTIONS.map((opt) => opt.value));
   const currentTier = searchParams.get("tier") || "all";
   const currentLang = searchParams.get("lang") || "all";
-  const currentDate = searchParams.get("date") || "all";
+  const rawDate = searchParams.get("date");
+  const currentDate = rawDate && validDateValues.has(rawDate) ? rawDate : "all";
   const parsedSize = Number(searchParams.get("size"));
   const currentSize = PAGE_SIZE_OPTIONS.includes(parsedSize) ? parsedSize : 20;
   const parsedPage = Number(searchParams.get("page"));
