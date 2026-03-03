@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS crawl_sources (
 -- Crawl history log
 CREATE TABLE IF NOT EXISTS crawl_histories (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    source_id BIGINT NOT NULL REFERENCES crawl_sources(id),
+    source_id BIGINT NOT NULL REFERENCES crawl_sources(id) ON DELETE CASCADE,
     status TEXT DEFAULT 'running',
     started_at TIMESTAMPTZ DEFAULT now(),
     finished_at TIMESTAMPTZ,
@@ -25,6 +25,8 @@ CREATE TABLE IF NOT EXISTS crawl_histories (
     error_message TEXT,
     created_at TIMESTAMPTZ DEFAULT now()
 );
+
+CREATE INDEX IF NOT EXISTS idx_crawl_histories_source_id ON crawl_histories(source_id);
 
 -- Algorithm tags
 CREATE TABLE IF NOT EXISTS tags (
