@@ -83,6 +83,7 @@ CREATE TABLE IF NOT EXISTS daily_recommendations (
 CREATE INDEX IF NOT EXISTS idx_daily_recommendations_date ON daily_recommendations(recommended_date DESC);
 CREATE INDEX IF NOT EXISTS idx_problems_tier ON problems(tier);
 CREATE INDEX IF NOT EXISTS idx_problems_external_id ON problems(external_id);
+CREATE INDEX IF NOT EXISTS idx_problems_created_at ON problems(created_at);
 
 -- Row Level Security
 ALTER TABLE crawl_sources ENABLE ROW LEVEL SECURITY;

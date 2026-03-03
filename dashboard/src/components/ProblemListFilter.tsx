@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback } from "react";
 import {
   TIER_FILTER_OPTIONS,
+  DATE_FILTER_OPTIONS,
   PAGE_SIZE_OPTIONS,
   LANGUAGE_LABELS,
 } from "@/lib/constants";
@@ -22,6 +23,7 @@ export default function ProblemListFilter({
 
   const currentTier = searchParams.get("tier") || "all";
   const currentLang = searchParams.get("lang") || "all";
+  const currentDate = searchParams.get("date") || "all";
   const parsedSize = Number(searchParams.get("size"));
   const currentSize = PAGE_SIZE_OPTIONS.includes(parsedSize) ? parsedSize : 20;
   const parsedPage = Number(searchParams.get("page"));
@@ -40,7 +42,7 @@ export default function ProblemListFilter({
           params.set(key, value);
         }
       }
-      if (updates.tier || updates.lang || updates.size) {
+      if (updates.tier || updates.lang || updates.size || updates.date) {
         params.delete("page");
       }
       router.push(`/problems?${params.toString()}`);
@@ -89,6 +91,27 @@ export default function ProblemListFilter({
             {availableLanguages.map((lang) => (
               <option key={lang} value={lang}>
                 {LANGUAGE_LABELS[lang] || lang.toUpperCase()}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <label
+            htmlFor="date-filter"
+            className="text-sm text-gray-500 dark:text-gray-400"
+          >
+            Period:
+          </label>
+          <select
+            id="date-filter"
+            value={currentDate}
+            onChange={(e) => updateParams({ date: e.target.value })}
+            className="px-3 py-1.5 rounded-lg text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300"
+          >
+            {DATE_FILTER_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
               </option>
             ))}
           </select>
