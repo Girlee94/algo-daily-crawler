@@ -1,10 +1,43 @@
 -- ==============================================
 -- Algorithm Crawler Schema
--- Uses existing crawl_sources (bigint PK) and tags (UUID PK) tables
 -- ==============================================
 
--- tags table already exists with correct schema (UUID PK)
--- crawl_sources table already exists with bigint PK
+-- Crawl sources (e.g. solved.ac)
+CREATE TABLE IF NOT EXISTS crawl_sources (
+    id BIGSERIAL PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE,
+    url TEXT,
+    source_type TEXT DEFAULT 'API',
+    config JSONB DEFAULT '{}',
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Crawl history log
+CREATE TABLE IF NOT EXISTS crawl_histories (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    source_id BIGINT NOT NULL REFERENCES crawl_sources(id),
+    status TEXT DEFAULT 'running',
+    started_at TIMESTAMPTZ DEFAULT now(),
+    finished_at TIMESTAMPTZ,
+    total_count INTEGER DEFAULT 0,
+    new_count INTEGER DEFAULT 0,
+    error_message TEXT,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Algorithm tags
+CREATE TABLE IF NOT EXISTS tags (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    key TEXT NOT NULL UNIQUE,
+    boj_tag_id INTEGER,
+    display_name_ko TEXT,
+    display_name_en TEXT,
+    problem_count INTEGER DEFAULT 0,
+    is_meta BOOLEAN DEFAULT false,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
+);
 
 -- Problems (algorithm problems from solved.ac / baekjoon)
 CREATE TABLE IF NOT EXISTS problems (
@@ -50,12 +83,24 @@ CREATE INDEX IF NOT EXISTS idx_problems_tier ON problems(tier);
 CREATE INDEX IF NOT EXISTS idx_problems_external_id ON problems(external_id);
 
 -- Row Level Security
+ALTER TABLE crawl_sources ENABLE ROW LEVEL SECURITY;
+ALTER TABLE crawl_histories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tags ENABLE ROW LEVEL SECURITY;
 ALTER TABLE problems ENABLE ROW LEVEL SECURITY;
 ALTER TABLE problem_tags ENABLE ROW LEVEL SECURITY;
 ALTER TABLE daily_recommendations ENABLE ROW LEVEL SECURITY;
 
 -- Read-only policies for dashboard (anon key)
 DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'anon_read_crawl_sources') THEN
+        CREATE POLICY anon_read_crawl_sources ON crawl_sources FOR SELECT USING (true);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'anon_read_crawl_histories') THEN
+        CREATE POLICY anon_read_crawl_histories ON crawl_histories FOR SELECT USING (true);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'anon_read_tags') THEN
+        CREATE POLICY anon_read_tags ON tags FOR SELECT USING (true);
+    END IF;
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'anon_read_problems') THEN
         CREATE POLICY anon_read_problems ON problems FOR SELECT USING (true);
     END IF;
