@@ -1,6 +1,10 @@
 import { Suspense } from "react";
 import { supabase, Problem } from "@/lib/supabase";
-import { TIER_INFO, PAGE_SIZE_OPTIONS } from "@/lib/constants";
+import {
+  TIER_INFO,
+  PAGE_SIZE_OPTIONS,
+  DATE_FILTER_OPTIONS,
+} from "@/lib/constants";
 import ProblemCard from "@/components/ProblemCard";
 import ProblemListFilter from "@/components/ProblemListFilter";
 
@@ -12,6 +16,7 @@ type Props = {
     tier?: string;
     lang?: string;
     size?: string;
+    date?: string;
   }>;
 };
 
@@ -20,6 +25,7 @@ async function getProblems(params: {
   tier: string;
   lang: string;
   size: number;
+  date: string;
 }): Promise<{ problems: Problem[]; totalCount: number }> {
   let query = supabase
     .from("problems")
@@ -40,6 +46,16 @@ async function getProblems(params: {
 
   if (params.lang !== "all") {
     query = query.contains("languages", [params.lang]);
+  }
+
+  const allowedDays = DATE_FILTER_OPTIONS.map((o) => o.value).filter(
+    (v) => v !== "all",
+  );
+  if (allowedDays.includes(params.date)) {
+    const days = Number(params.date);
+    const MS_PER_DAY = 24 * 60 * 60 * 1000;
+    const since = new Date(Date.now() - days * MS_PER_DAY).toISOString();
+    query = query.gte("created_at", since);
   }
 
   const from = (params.page - 1) * params.size;
@@ -95,13 +111,14 @@ async function ProblemsContent({ searchParams }: Props) {
   const page = Math.min(Math.max(1, Number(params.page) || 1), 1000);
   const tier = params.tier || "all";
   const lang = params.lang || "all";
+  const date = params.date || "all";
   const size = PAGE_SIZE_OPTIONS.includes(Number(params.size))
     ? Number(params.size)
     : 20;
 
   const [{ problems: initialProblems, totalCount }, availableLanguages] =
     await Promise.all([
-      getProblems({ page, tier, lang, size }),
+      getProblems({ page, tier, lang, size, date }),
       getAvailableLanguages(),
     ]);
 
@@ -110,7 +127,8 @@ async function ProblemsContent({ searchParams }: Props) {
   const problems =
     safePage === page
       ? initialProblems
-      : (await getProblems({ page: safePage, tier, lang, size })).problems;
+      : (await getProblems({ page: safePage, tier, lang, size, date }))
+          .problems;
 
   return (
     <>

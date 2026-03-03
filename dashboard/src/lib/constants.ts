@@ -31,6 +31,13 @@ export const TIER_FILTER_OPTIONS = [
   })),
 ];
 
+export const DATE_FILTER_OPTIONS = [
+  { value: "all", label: "All Time" },
+  { value: "7", label: "Last 7 Days" },
+  { value: "30", label: "Last 30 Days" },
+  { value: "90", label: "Last 90 Days" },
+];
+
 export const PAGE_SIZE_OPTIONS = [10, 20, 50];
 
 export function getTierInfo(tier: number) {
