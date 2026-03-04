@@ -16,6 +16,30 @@ export type Problem = {
   url: string;
 };
 
+export type Tag = {
+  id: string;
+  key: string;
+  display_name_ko: string | null;
+  display_name_en: string | null;
+  problem_count: number;
+};
+
+export type ProblemDetail = Problem & {
+  average_tries: number | null;
+  is_solvable: boolean;
+  problem_tags: {
+    tag_id: string;
+    tags: Tag;
+  }[];
+};
+
+export type RecommendationSummary = {
+  id: string;
+  recommended_date: string;
+  strategy: string;
+  reason: string | null;
+};
+
 export type DailyRecommendation = {
   id: string;
   recommended_date: string;

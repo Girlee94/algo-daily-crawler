@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { supabase, Problem } from "@/lib/supabase";
+import { supabase, Problem, Tag } from "@/lib/supabase";
 import {
   TIER_INFO,
   PAGE_SIZE_OPTIONS,
@@ -17,8 +17,54 @@ type Props = {
     lang?: string;
     size?: string;
     date?: string;
+    tags?: string;
+    q?: string;
   }>;
 };
+
+async function getPopularTags(): Promise<Tag[]> {
+  const { data, error } = await supabase
+    .from("tags")
+    .select("id, key, display_name_ko, display_name_en, problem_count")
+    .eq("is_meta", false)
+    .order("problem_count", { ascending: false })
+    .limit(30);
+
+  if (error) {
+    console.error("Failed to fetch tags:", error?.message);
+    return [];
+  }
+  return (data as Tag[]) || [];
+}
+
+async function getProblemIdsByTags(
+  tagKeys: string[],
+  allTags: Tag[],
+): Promise<string[] | null> {
+  if (tagKeys.length === 0) return null;
+
+  const tagIds = allTags
+    .filter((t) => tagKeys.includes(t.key))
+    .map((t) => t.id);
+
+  if (tagIds.length === 0) return [];
+
+  const { data, error } = await supabase
+    .from("problem_tags")
+    .select("problem_id")
+    .in("tag_id", tagIds)
+    .limit(2000);
+
+  if (error) {
+    console.error("Failed to fetch problem_tags:", error?.message);
+    return [];
+  }
+
+  const ids = [
+    ...new Set((data || []).map((r: { problem_id: string }) => r.problem_id)),
+  ];
+  return ids;
+}
 
 async function getProblems(params: {
   page: number;
@@ -26,6 +72,8 @@ async function getProblems(params: {
   lang: string;
   size: number;
   date: string;
+  tagProblemIds: string[] | null;
+  q: string;
 }): Promise<{ problems: Problem[]; totalCount: number }> {
   let query = supabase
     .from("problems")
@@ -58,6 +106,31 @@ async function getProblems(params: {
     query = query.gte("created_at", since);
   }
 
+  // Tag filter
+  if (params.tagProblemIds !== null) {
+    if (params.tagProblemIds.length === 0) {
+      return { problems: [], totalCount: 0 };
+    }
+    query = query.in("id", params.tagProblemIds);
+  }
+
+  // Search filter (allowlist: letters, numbers, spaces only)
+  if (params.q) {
+    const term = params.q
+      .trim()
+      .replace(/[^\p{L}\p{N}\s]/gu, "")
+      .slice(0, 100);
+    if (/^\d+$/.test(term)) {
+      query = query.eq("external_id", Number(term));
+    } else if (term.length > 0) {
+      // Escape LIKE wildcards as defence in depth
+      const safeTerm = term.replace(/%/g, "\\%").replace(/_/g, "\\_");
+      query = query.or(
+        `title_ko.ilike.%${safeTerm}%,title_en.ilike.%${safeTerm}%`,
+      );
+    }
+  }
+
   const from = (params.page - 1) * params.size;
   const to = from + params.size - 1;
 
@@ -67,7 +140,7 @@ async function getProblems(params: {
     .range(from, to);
 
   if (error) {
-    console.error("Failed to fetch problems:", error);
+    console.error("Failed to fetch problems:", error?.message);
     return { problems: [], totalCount: 0 };
   }
 
@@ -81,10 +154,11 @@ async function getAvailableLanguages(): Promise<string[]> {
   const { data, error } = await supabase
     .from("problems")
     .select("languages")
-    .eq("is_solvable", true);
+    .eq("is_solvable", true)
+    .limit(50000);
 
   if (error) {
-    console.error("Failed to fetch languages:", error);
+    console.error("Failed to fetch languages:", error?.message);
     return [];
   }
 
@@ -115,26 +189,51 @@ async function ProblemsContent({ searchParams }: Props) {
   const size = PAGE_SIZE_OPTIONS.includes(Number(params.size))
     ? Number(params.size)
     : 20;
+  const selectedTagKeys = params.tags
+    ? params.tags.split(",").filter(Boolean).slice(0, 10)
+    : [];
+  const q = params.q || "";
 
-  const [{ problems: initialProblems, totalCount }, availableLanguages] =
-    await Promise.all([
-      getProblems({ page, tier, lang, size, date }),
-      getAvailableLanguages(),
-    ]);
+  const [popularTags, availableLanguages] = await Promise.all([
+    getPopularTags(),
+    getAvailableLanguages(),
+  ]);
+
+  const tagProblemIds = await getProblemIdsByTags(selectedTagKeys, popularTags);
+
+  const { problems: initialProblems, totalCount } = await getProblems({
+    page,
+    tier,
+    lang,
+    size,
+    date,
+    tagProblemIds,
+    q,
+  });
 
   const totalPages = Math.max(1, Math.ceil(totalCount / size));
   const safePage = Math.min(page, totalPages);
   const problems =
     safePage === page
       ? initialProblems
-      : (await getProblems({ page: safePage, tier, lang, size, date }))
-          .problems;
+      : (
+          await getProblems({
+            page: safePage,
+            tier,
+            lang,
+            size,
+            date,
+            tagProblemIds,
+            q,
+          })
+        ).problems;
 
   return (
     <>
       <ProblemListFilter
         totalCount={totalCount}
         availableLanguages={availableLanguages}
+        popularTags={popularTags}
       />
 
       {problems.length === 0 ? (
@@ -146,6 +245,7 @@ async function ProblemsContent({ searchParams }: Props) {
           {problems.map((problem, idx) => (
             <ProblemCard
               key={problem.id}
+              id={problem.id}
               order={(safePage - 1) * size + idx + 1}
               title={problem.title_ko || problem.title_en}
               tier={problem.tier}

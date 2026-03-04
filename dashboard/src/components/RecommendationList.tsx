@@ -36,7 +36,7 @@ export default function RecommendationList({
   const filtered = useMemo(() => {
     if (!selectedLang) return recommendations;
     return recommendations.filter((rec) =>
-      (rec.problems.languages || []).includes(selectedLang)
+      (rec.problems.languages || []).includes(selectedLang),
     );
   }, [recommendations, selectedLang]);
 
@@ -59,6 +59,7 @@ export default function RecommendationList({
           {filtered.map((rec) => (
             <ProblemCard
               key={rec.id}
+              id={rec.problems.id}
               order={rec.display_order + 1}
               title={rec.problems.title_ko}
               tier={rec.problems.tier}
@@ -75,7 +76,9 @@ export default function RecommendationList({
       {recommendations.length > 0 && (
         <div className="mt-6 text-center text-xs text-gray-400">
           Strategy: {recommendations[0]?.strategy}
-          {selectedLang && filtered.length > 0 && ` | Filtered: ${filtered.length}/${recommendations.length}`}
+          {selectedLang &&
+            filtered.length > 0 &&
+            ` | Filtered: ${filtered.length}/${recommendations.length}`}
         </div>
       )}
     </div>
