@@ -160,7 +160,10 @@ export default async function ProblemDetailPage({ params }: Props) {
             </h2>
             <div className="flex flex-wrap gap-1.5">
               {tags.map((tag) => (
-                <Link key={tag.id} href={`/problems?tags=${tag.key}`}>
+                <Link
+                  key={tag.id}
+                  href={`/problems?tags=${encodeURIComponent(tag.key)}`}
+                >
                   <TagChip
                     name={tag.display_name_en || tag.key}
                     count={tag.problem_count}

@@ -29,29 +29,19 @@ async function getStats() {
 }
 
 async function getTierDistribution() {
-  const { data, error } = await supabase
-    .from("problems")
-    .select("tier")
-    .eq("is_solvable", true)
-    .limit(50000);
-
-  if (error || !data) return [];
-
-  const counts: Record<string, number> = {};
-  for (const row of data) {
-    for (const [key, info] of Object.entries(TIER_INFO)) {
-      if (row.tier >= info.range[0] && row.tier <= info.range[1]) {
-        counts[key] = (counts[key] || 0) + 1;
-        break;
-      }
-    }
-  }
-
-  return Object.entries(TIER_INFO).map(([key, info]) => ({
-    name: info.name,
-    count: counts[key] || 0,
-    color: info.color,
-  }));
+  // Query count per tier range using individual count queries (no row-level fetch)
+  const results = await Promise.all(
+    Object.entries(TIER_INFO).map(async ([, info]) => {
+      const { count } = await supabase
+        .from("problems")
+        .select("id", { count: "exact", head: true })
+        .eq("is_solvable", true)
+        .gte("tier", info.range[0])
+        .lte("tier", info.range[1]);
+      return { name: info.name, count: count || 0, color: info.color };
+    }),
+  );
+  return results;
 }
 
 async function getTagDistribution() {
@@ -71,10 +61,11 @@ async function getTagDistribution() {
 }
 
 async function getRecommendationTrend() {
+  // Fetch most recent 10k rows (descending) then reverse for chronological display
   const { data, error } = await supabase
     .from("daily_recommendations")
     .select("recommended_date")
-    .order("recommended_date", { ascending: true })
+    .order("recommended_date", { ascending: false })
     .limit(10000);
 
   if (error || !data) return [];

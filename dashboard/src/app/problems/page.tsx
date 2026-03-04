@@ -39,21 +39,28 @@ async function getPopularTags(): Promise<Tag[]> {
 
 async function getProblemIdsByTags(
   tagKeys: string[],
-  allTags: Tag[],
 ): Promise<string[] | null> {
   if (tagKeys.length === 0) return null;
 
-  const tagIds = allTags
-    .filter((t) => tagKeys.includes(t.key))
-    .map((t) => t.id);
+  // Look up tag IDs directly from DB (not limited to popular tags)
+  const { data: tagRows, error: tagErr } = await supabase
+    .from("tags")
+    .select("id")
+    .in("key", tagKeys)
+    .eq("is_meta", false);
 
+  if (tagErr) {
+    console.error("Failed to fetch tag ids:", tagErr?.message);
+    return [];
+  }
+
+  const tagIds = (tagRows || []).map((t: { id: string }) => t.id);
   if (tagIds.length === 0) return [];
 
   const { data, error } = await supabase
     .from("problem_tags")
     .select("problem_id")
-    .in("tag_id", tagIds)
-    .limit(2000);
+    .in("tag_id", tagIds);
 
   if (error) {
     console.error("Failed to fetch problem_tags:", error?.message);
@@ -199,7 +206,7 @@ async function ProblemsContent({ searchParams }: Props) {
     getAvailableLanguages(),
   ]);
 
-  const tagProblemIds = await getProblemIdsByTags(selectedTagKeys, popularTags);
+  const tagProblemIds = await getProblemIdsByTags(selectedTagKeys);
 
   const { problems: initialProblems, totalCount } = await getProblems({
     page,
