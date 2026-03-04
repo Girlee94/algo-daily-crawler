@@ -1,22 +1,27 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import {
   TIER_FILTER_OPTIONS,
   DATE_FILTER_OPTIONS,
   PAGE_SIZE_OPTIONS,
   LANGUAGE_LABELS,
 } from "@/lib/constants";
+import type { Tag } from "@/lib/supabase";
+import TagChip from "./TagChip";
+import SearchInput from "./SearchInput";
 
 type ProblemListFilterProps = {
   totalCount: number;
   availableLanguages: string[];
+  popularTags: Tag[];
 };
 
 export default function ProblemListFilter({
   totalCount,
   availableLanguages,
+  popularTags,
 }: ProblemListFilterProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -31,6 +36,11 @@ export default function ProblemListFilter({
   const parsedPage = Number(searchParams.get("page"));
   const currentPage =
     Number.isFinite(parsedPage) && parsedPage > 0 ? parsedPage : 1;
+  const currentTags = useMemo(
+    () => searchParams.get("tags")?.split(",").filter(Boolean) || [],
+    [searchParams],
+  );
+  const currentQ = searchParams.get("q") || "";
 
   const totalPages = Math.max(1, Math.ceil(totalCount / currentSize));
 
@@ -44,7 +54,14 @@ export default function ProblemListFilter({
           params.set(key, value);
         }
       }
-      if (updates.tier || updates.lang || updates.size || updates.date) {
+      if (
+        updates.tier ||
+        updates.lang ||
+        updates.size ||
+        updates.date ||
+        updates.tags !== undefined ||
+        updates.q !== undefined
+      ) {
         params.delete("page");
       }
       router.push(`/problems?${params.toString()}`);
@@ -52,8 +69,23 @@ export default function ProblemListFilter({
     [router, searchParams],
   );
 
+  const toggleTag = useCallback(
+    (tagKey: string) => {
+      const newTags = currentTags.includes(tagKey)
+        ? currentTags.filter((t) => t !== tagKey)
+        : [...currentTags, tagKey];
+      updateParams({ tags: newTags.join(",") });
+    },
+    [currentTags, updateParams],
+  );
+
   return (
     <div className="space-y-4">
+      <SearchInput
+        value={currentQ}
+        onChange={(val) => updateParams({ q: val })}
+      />
+
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-2">
           <label
@@ -144,6 +176,23 @@ export default function ProblemListFilter({
           {totalCount} problems
         </span>
       </div>
+
+      {popularTags.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          <span className="text-xs text-gray-400 dark:text-gray-500 self-center mr-1">
+            Tags:
+          </span>
+          {popularTags.map((tag) => (
+            <TagChip
+              key={tag.id}
+              name={tag.display_name_en || tag.key}
+              count={tag.problem_count}
+              selected={currentTags.includes(tag.key)}
+              onClick={() => toggleTag(tag.key)}
+            />
+          ))}
+        </div>
+      )}
 
       {totalPages > 1 && (
         <nav

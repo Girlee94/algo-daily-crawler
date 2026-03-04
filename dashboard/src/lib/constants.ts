@@ -40,6 +40,11 @@ export const DATE_FILTER_OPTIONS = [
 
 export const PAGE_SIZE_OPTIONS = [10, 20, 50];
 
+export function safeExternalUrl(url: string): string {
+  if (/^https?:\/\//i.test(url)) return url;
+  return "#";
+}
+
 export function getTierInfo(tier: number) {
   for (const [key, info] of Object.entries(TIER_INFO)) {
     if (tier >= info.range[0] && tier <= info.range[1]) {

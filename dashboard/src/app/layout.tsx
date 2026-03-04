@@ -55,6 +55,12 @@ export default function RootLayout({
               >
                 History
               </Link>
+              <Link
+                href="/stats"
+                className="text-gray-600 dark:text-gray-300 hover:text-blue-500"
+              >
+                Stats
+              </Link>
             </div>
           </div>
         </nav>
