@@ -10,17 +10,15 @@ import ProblemListFilter from "@/components/ProblemListFilter";
 
 export const revalidate = 3600;
 
+type SearchParams = Record<string, string | string[] | undefined>;
+
 type Props = {
-  searchParams: Promise<{
-    page?: string;
-    tier?: string;
-    lang?: string;
-    size?: string;
-    date?: string;
-    tags?: string;
-    q?: string;
-  }>;
+  searchParams: Promise<SearchParams>;
 };
+
+function firstParam(v?: string | string[]): string | undefined {
+  return Array.isArray(v) ? v[0] : v;
+}
 
 async function getPopularTags(): Promise<Tag[]> {
   const { data, error } = await supabase
@@ -47,8 +45,7 @@ async function resolveTagIds(tagKeys: string[]): Promise<string[] | null> {
     .eq("is_meta", false);
 
   if (error) {
-    console.error("Failed to fetch tag ids:", error?.message);
-    return [];
+    throw new Error(`Failed to resolve tag ids: ${error.message}`);
   }
 
   return (data || []).map((t: { id: string }) => t.id);
@@ -141,22 +138,32 @@ async function getProblems(params: {
 }
 
 async function getAvailableLanguages(): Promise<string[]> {
-  const { data, error } = await supabase
-    .from("problems")
-    .select("languages")
-    .eq("is_solvable", true)
-    .limit(50000);
-
-  if (error) {
-    console.error("Failed to fetch languages:", error?.message);
-    return [];
-  }
-
   const langSet = new Set<string>();
-  for (const row of data || []) {
-    for (const lang of row.languages || []) {
-      langSet.add(lang);
+  const PAGE = 1000;
+  let from = 0;
+
+  // Paginate to collect all distinct languages without a hard cap
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    const { data, error } = await supabase
+      .from("problems")
+      .select("languages")
+      .eq("is_solvable", true)
+      .range(from, from + PAGE - 1);
+
+    if (error) {
+      console.error("Failed to fetch languages:", error?.message);
+      break;
     }
+
+    for (const row of data || []) {
+      for (const lang of row.languages || []) {
+        langSet.add(lang);
+      }
+    }
+
+    if (!data || data.length < PAGE) break;
+    from += PAGE;
   }
 
   const priority = ["ko", "en", "ja"];
@@ -172,17 +179,21 @@ async function getAvailableLanguages(): Promise<string[]> {
 
 async function ProblemsContent({ searchParams }: Props) {
   const params = await searchParams;
-  const page = Math.min(Math.max(1, Number(params.page) || 1), 1000);
-  const tier = params.tier || "all";
-  const lang = params.lang || "all";
-  const date = params.date || "all";
-  const size = PAGE_SIZE_OPTIONS.includes(Number(params.size))
-    ? Number(params.size)
+  const page = Math.min(
+    Math.max(1, Number(firstParam(params.page)) || 1),
+    1000,
+  );
+  const tier = firstParam(params.tier) || "all";
+  const lang = firstParam(params.lang) || "all";
+  const date = firstParam(params.date) || "all";
+  const size = PAGE_SIZE_OPTIONS.includes(Number(firstParam(params.size)))
+    ? Number(firstParam(params.size))
     : 20;
-  const selectedTagKeys = params.tags
-    ? params.tags.split(",").filter(Boolean).slice(0, 10)
+  const tagsRaw = firstParam(params.tags);
+  const selectedTagKeys = tagsRaw
+    ? tagsRaw.split(",").filter(Boolean).slice(0, 10)
     : [];
-  const q = params.q || "";
+  const q = firstParam(params.q) || "";
 
   const [popularTags, availableLanguages] = await Promise.all([
     getPopularTags(),
