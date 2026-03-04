@@ -140,11 +140,17 @@ async function getProblems(params: {
 async function getAvailableLanguages(): Promise<string[]> {
   const langSet = new Set<string>();
   const PAGE = 1000;
+  const MAX_PAGES = 100;
   let from = 0;
+  let pageCount = 0;
 
-  // Paginate to collect all distinct languages without a hard cap
+  // Paginate to collect all distinct languages with safety limit
   // eslint-disable-next-line no-constant-condition
   while (true) {
+    if (++pageCount > MAX_PAGES) {
+      console.warn("getAvailableLanguages: hit max page limit");
+      break;
+    }
     const { data, error } = await supabase
       .from("problems")
       .select("languages")
