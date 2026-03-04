@@ -127,8 +127,7 @@ async function getProblems(params: {
     .range(from, to);
 
   if (error) {
-    console.error("Failed to fetch problems:", error?.message);
-    return { problems: [], totalCount: 0 };
+    throw new Error(`Failed to fetch problems: ${error.message}`);
   }
 
   return {
@@ -197,7 +196,14 @@ async function ProblemsContent({ searchParams }: Props) {
     : 20;
   const tagsRaw = firstParam(params.tags);
   const selectedTagKeys = tagsRaw
-    ? tagsRaw.split(",").filter(Boolean).slice(0, 10)
+    ? [
+        ...new Set(
+          tagsRaw
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean),
+        ),
+      ].slice(0, 10)
     : [];
   const q = firstParam(params.q) || "";
 
