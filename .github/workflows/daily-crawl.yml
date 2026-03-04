@@ -1,0 +1,26 @@
+name: Daily Crawl & Recommend
+
+on:
+  schedule:
+    - cron: '0 21 * * *' # UTC 21:00 = KST 06:00
+  workflow_dispatch: # 수동 실행 지원
+
+jobs:
+  crawl-and-recommend:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: 'pip'
+      - run: pip install -e .
+      - name: Sync tags
+        run: algo-crawler sync-tags
+      - name: Crawl problems
+        run: algo-crawler crawl --max-pages 5
+      - name: Generate recommendations
+        run: algo-crawler recommend
