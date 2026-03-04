@@ -37,40 +37,21 @@ async function getPopularTags(): Promise<Tag[]> {
   return (data as Tag[]) || [];
 }
 
-async function getProblemIdsByTags(
-  tagKeys: string[],
-): Promise<string[] | null> {
+async function resolveTagIds(tagKeys: string[]): Promise<string[] | null> {
   if (tagKeys.length === 0) return null;
 
-  // Look up tag IDs directly from DB (not limited to popular tags)
-  const { data: tagRows, error: tagErr } = await supabase
+  const { data, error } = await supabase
     .from("tags")
     .select("id")
     .in("key", tagKeys)
     .eq("is_meta", false);
 
-  if (tagErr) {
-    console.error("Failed to fetch tag ids:", tagErr?.message);
-    return [];
-  }
-
-  const tagIds = (tagRows || []).map((t: { id: string }) => t.id);
-  if (tagIds.length === 0) return [];
-
-  const { data, error } = await supabase
-    .from("problem_tags")
-    .select("problem_id")
-    .in("tag_id", tagIds);
-
   if (error) {
-    console.error("Failed to fetch problem_tags:", error?.message);
+    console.error("Failed to fetch tag ids:", error?.message);
     return [];
   }
 
-  const ids = [
-    ...new Set((data || []).map((r: { problem_id: string }) => r.problem_id)),
-  ];
-  return ids;
+  return (data || []).map((t: { id: string }) => t.id);
 }
 
 async function getProblems(params: {
@@ -79,16 +60,27 @@ async function getProblems(params: {
   lang: string;
   size: number;
   date: string;
-  tagProblemIds: string[] | null;
+  tagIds: string[] | null;
   q: string;
 }): Promise<{ problems: Problem[]; totalCount: number }> {
+  // Use inner join when tag filtering to push filtering to DB in a single query
+  const selectFields =
+    params.tagIds && params.tagIds.length > 0
+      ? "id, external_id, title_ko, title_en, tier, accepted_user_count, languages, url, problem_tags!inner(tag_id)"
+      : "id, external_id, title_ko, title_en, tier, accepted_user_count, languages, url";
+
   let query = supabase
     .from("problems")
-    .select(
-      "id, external_id, title_ko, title_en, tier, accepted_user_count, languages, url",
-      { count: "exact" },
-    )
+    .select(selectFields, { count: "exact" })
     .eq("is_solvable", true);
+
+  // Tag filter via inner join (single DB query, no intermediate ID list)
+  if (params.tagIds !== null) {
+    if (params.tagIds.length === 0) {
+      return { problems: [], totalCount: 0 };
+    }
+    query = query.in("problem_tags.tag_id", params.tagIds);
+  }
 
   if (params.tier !== "all") {
     const tierInfo = TIER_INFO[params.tier];
@@ -113,14 +105,6 @@ async function getProblems(params: {
     query = query.gte("created_at", since);
   }
 
-  // Tag filter
-  if (params.tagProblemIds !== null) {
-    if (params.tagProblemIds.length === 0) {
-      return { problems: [], totalCount: 0 };
-    }
-    query = query.in("id", params.tagProblemIds);
-  }
-
   // Search filter (allowlist: letters, numbers, spaces only)
   if (params.q) {
     const term = params.q
@@ -130,7 +114,6 @@ async function getProblems(params: {
     if (/^\d+$/.test(term)) {
       query = query.eq("external_id", Number(term));
     } else if (term.length > 0) {
-      // Escape LIKE wildcards as defence in depth
       const safeTerm = term.replace(/%/g, "\\%").replace(/_/g, "\\_");
       query = query.or(
         `title_ko.ilike.%${safeTerm}%,title_en.ilike.%${safeTerm}%`,
@@ -152,7 +135,7 @@ async function getProblems(params: {
   }
 
   return {
-    problems: (data as Problem[]) || [],
+    problems: (data as unknown as Problem[]) || [],
     totalCount: count || 0,
   };
 }
@@ -206,7 +189,7 @@ async function ProblemsContent({ searchParams }: Props) {
     getAvailableLanguages(),
   ]);
 
-  const tagProblemIds = await getProblemIdsByTags(selectedTagKeys);
+  const tagIds = await resolveTagIds(selectedTagKeys);
 
   const { problems: initialProblems, totalCount } = await getProblems({
     page,
@@ -214,7 +197,7 @@ async function ProblemsContent({ searchParams }: Props) {
     lang,
     size,
     date,
-    tagProblemIds,
+    tagIds,
     q,
   });
 
@@ -230,7 +213,7 @@ async function ProblemsContent({ searchParams }: Props) {
             lang,
             size,
             date,
-            tagProblemIds,
+            tagIds,
             q,
           })
         ).problems;
